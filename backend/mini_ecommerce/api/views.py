@@ -38,7 +38,7 @@ class CartViewSet(viewsets.ModelViewSet):
     def add_product(self, request, pk=None):
         product_id = request.data.get('product_id')
         quantity = int(request.data.get('quantity', 1))
-        
+
         try:
             product = Product.objects.get(id=product_id)
         except Product.DoesNotExist:
@@ -46,7 +46,12 @@ class CartViewSet(viewsets.ModelViewSet):
 
         cart, _ = Cart.objects.get_or_create(user=request.user)
         cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
-        cart_item.quantity = cart_item.quantity + quantity if not created else quantity
+        nova_quantidade = cart_item.quantity + quantity if not created else quantity
+
+        if product.stock < nova_quantidade:
+            return Response({"error": "Estoque insuficiente"}, status=status.HTTP_400_BAD_REQUEST)
+
+        cart_item.quantity = nova_quantidade
         cart_item.save()
 
         serializer = CartItemSerializer(cart_item)
