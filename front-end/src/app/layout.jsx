@@ -1,6 +1,7 @@
-import '../src/app/globals.css';
-import Navbar from '../src/components/Navbar';
-import Footer from '../src/components/Footer';
+import './globals.css';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import { CartProvider } from '../context/CartContext';
 
 export const metadata = {
   title: 'Capibara Bombardina Store',
@@ -11,11 +12,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="pt-br">
       <body className="bg-white text-gray-900 dark:bg-gray-900 dark:text-white">
-        <Navbar />
-        <main className="mt-[90px]">
-          {children}
-        </main>
-        <Footer />
+        <CartProvider>
+          <Navbar />
+          <main className="mt-20 min-h-screen">{children}</main>
+          <Footer />
+        </CartProvider>
       </body>
     </html>
   );
