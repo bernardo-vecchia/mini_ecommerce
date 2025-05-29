@@ -7,11 +7,10 @@ export const CartProvider = ({ children }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   const toggleCart = () => setIsCartOpen(!isCartOpen);
-  const openCart = () => setIsCartOpen(true);
   const closeCart = () => setIsCartOpen(false);
 
   return (
-    <CartContext.Provider value={{ isCartOpen, toggleCart, openCart, closeCart }}>
+    <CartContext.Provider value={{ isCartOpen, toggleCart, closeCart }}>
       {children}
     </CartContext.Provider>
   );
