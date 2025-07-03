@@ -3,16 +3,44 @@ import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { useSearch } from '../context/SearchContext';
+import axios from 'axios';
 
 export default function Navbar() {
   const { isCartOpen, toggleCart, closeCart } = useCart();
   const { isSearchOpen, toggleSearch, closeSearch } = useSearch();
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const cartRef = useRef(null);
   const searchRef = useRef(null);
 
   const handleDropdown = (category) => {
     setOpenDropdown(openDropdown === category ? null : category);
+  };
+
+  // Search functionality
+  const handleSearch = async (query) => {
+    setSearchQuery(query);
+    if (query.trim() === '') {
+      setSearchResults([]);
+      setHasSearched(false);
+      return;
+    }
+
+    setIsSearching(true);
+    setHasSearched(true);
+    
+    try {
+      const response = await axios.get(`http://localhost:8000/api/products/?search=${query}`);
+      setSearchResults(response.data.results || response.data || []);
+    } catch (error) {
+      console.error('Erro na busca:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   // Fechar carrinho clicando fora ou saindo com mouse
@@ -34,6 +62,9 @@ export default function Navbar() {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         closeSearch();
+        setSearchQuery('');
+        setSearchResults([]);
+        setHasSearched(false);
       }
     };
     if (isSearchOpen) {
@@ -52,6 +83,15 @@ export default function Navbar() {
     { label: 'Acessórios', id: 'acessorios', items: ['Capa', 'Carregador'] },
     { label: 'Vestuário', id: 'vestuario', items: ['Moletom'] },
   ];
+
+  const handleCartOptionClick = (path) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = '/login';
+    } else {
+      window.location.href = path;
+    }
+  };
 
   return (
     <>
@@ -88,7 +128,7 @@ export default function Navbar() {
                     <ul className="space-y-1">
                       {category.items.map((item) => (
                         <li key={item}>
-                          <Link href="#ACRESCENTAR LOGIN AQUI">
+                          <Link href="/product">
                             <span className="hover:text-blue-600">{item}</span>
                           </Link>
                         </li>
@@ -121,7 +161,6 @@ export default function Navbar() {
         </div>
       </nav>
 
-
       {/* Modal Busca */}
       {isSearchOpen && (
         <div
@@ -133,11 +172,49 @@ export default function Navbar() {
           <input
             type="text"
             placeholder="Digite aqui..."
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
             className="w-full p-2 rounded bg-white text-black mb-4"
           />
-          <p className="text-white text-sm p-2">
-            Olhe o que ela achou...
-          </p>
+          <div className="text-white text-sm p-2">
+            {isSearching ? (
+              <p>🐾 A Capybara está procurando...</p>
+            ) : hasSearched ? (
+              searchResults.length > 0 ? (
+                <div>
+                  <p className="mb-3">Olhe o que ela achou...</p>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {searchResults.map((product) => (
+                      <Link 
+                        key={product.id} 
+                        href={`/product/${product.id}`}
+                        className="block p-3 bg-gray-800 rounded hover:bg-gray-700 transition-colors"
+                        onClick={closeSearch}
+                      >
+                        <div className="flex items-center space-x-3">
+                          {product.image && (
+                            <img 
+                              src={`http://localhost:8000${product.image}`} 
+                              alt={product.name}
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                          )}
+                          <div>
+                            <h3 className="font-semibold">{product.name}</h3>
+                            <p className="text-green-400">R$ {product.price}</p>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p>A Capybara não achou nada 😢</p>
+              )
+            ) : (
+              <p>Olhe o que ela achou...</p>
+            )}
+          </div>
         </div>
       )}
 
@@ -163,19 +240,19 @@ export default function Navbar() {
           <div>
             <h3 className="font-semibold mb-3 text-white">Meu perfil</h3>
             <ul className="space-y-3 text-white">
-              <li className="flex items-center gap-2">
+              <li className="flex items-center gap-2 cursor-pointer hover:text-blue-400" onClick={() => handleCartOptionClick('/orders')}>
                 <img src="/icon_order.png" alt="Pedidos" className="h-7 w-7" />
                 <span>Pedidos</span>
               </li>
-              <li className="flex items-center gap-2">
+              <li className="flex items-center gap-2 cursor-pointer hover:text-blue-400" onClick={() => handleCartOptionClick('/favorites')}>
                 <img src="/icon_fav.png" alt="Itens salvos" className="h-7 w-7" />
                 <span>Itens salvos</span>
               </li>
-              <li className="flex items-center gap-2">
+              <li className="flex items-center gap-2 cursor-pointer hover:text-blue-400" onClick={() => handleCartOptionClick('/account')}>
                 <span><img src="/icon_account.png" alt="Conta" className="h-7 w-7" /></span>
                 <span>Conta</span>
               </li>
-              <li className="flex items-center gap-2">
+              <li className="flex items-center gap-2 cursor-pointer hover:text-blue-400" onClick={() => handleCartOptionClick('/login')}>
                 <span>
                   <img src="/icon_login.png" alt="Login" className="h-7 w-7" />
                 </span>
