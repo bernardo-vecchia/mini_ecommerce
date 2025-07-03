@@ -15,7 +15,9 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include  # <- Importa o include para incluir rotas de apps
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
@@ -25,3 +27,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),           # Rota para o painel admin
     path('api/', include('api.urls')),         # Rota para os endpoints da API
 ]
+
+# Servir arquivos de media em desenvolvimento
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
